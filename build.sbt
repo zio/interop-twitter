@@ -1,3 +1,5 @@
+import ScalazBuild._
+
 inThisBuild(
   List(
     organization := "dev.zio",
@@ -27,14 +29,9 @@ scmInfo := Some(
 lazy val twitter = project
   .in(file("."))
   .enablePlugins(BuildInfoPlugin)
+  .settings(stdSettings("zio-interop-twitter"))
+  .settings(buildInfoSettings)
   .settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, isSnapshot),
-    buildInfoPackage := "zio",
-    buildInfoObject := "BuildInfo"
-  )
-  .settings(
-    crossScalaVersions := Seq("2.12.8", "2.11.12"),
-    name := "zio-interop-twitter",
     libraryDependencies ++= Seq(
       "dev.zio"     %% "scalaz-zio"  % "1.0-RC6",
       "com.twitter" %% "util-core"   % "19.5.1",
