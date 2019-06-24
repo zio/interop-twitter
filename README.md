@@ -1,5 +1,7 @@
 # Interop Twitter
 
+[![CircleCI][ci-badge]][ci-url]
+
 This library provides capability to convert Twitter `Future` into ZIO `Task`.
 
 ### Example
@@ -26,3 +28,6 @@ object Example extends App {
   private def greet(name: String): Future[String] = Future.value(s"Hello, $name!")
 }
 ```
+
+[ci-badge]: https://circleci.com/gh/zio/interop-twitter/tree/master.svg?style=svg
+[ci-url]: https://circleci.com/gh/zio/interop-twitter/tree/master
