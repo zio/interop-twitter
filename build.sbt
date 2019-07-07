@@ -33,9 +33,9 @@ lazy val twitter = project
   .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"     %% "zio"                  % "1.0.0-RC8-12",
+      "dev.zio"     %% "zio"                  % "1.0.0-RC9",
       "com.twitter" %% "util-core"            % "19.6.0",
-      "dev.zio"     %% "zio"                  % "1.0.0-RC8-12" % Test classifier "tests",
+      "dev.zio"     %% "zio"                  % "1.0.0-RC9" % Test classifier "tests",
       "org.specs2"  %% "specs2-core"          % "4.6.0" % Test,
       "org.specs2"  %% "specs2-matcher-extra" % "4.6.0" % Test
     )
