@@ -17,7 +17,7 @@
 package zio.interop
 
 import com.twitter.util.{ Future, FutureCancelledException, Promise, Return, Throw }
-import zio.Exit.Cause
+import zio.Cause
 import zio.{ Runtime, Task, UIO, ZIO }
 
 package object twitter {
