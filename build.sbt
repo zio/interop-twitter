@@ -36,7 +36,7 @@ lazy val twitter = project
       "dev.zio"     %% "zio"                  % "1.0.0-RC10-1",
       "com.twitter" %% "util-core"            % "19.7.0",
       "dev.zio"     %% "zio"                  % "1.0.0-RC10-1" % Test classifier "tests",
-      "org.specs2"  %% "specs2-core"          % "4.6.0" % Test,
-      "org.specs2"  %% "specs2-matcher-extra" % "4.6.0" % Test
+      "org.specs2"  %% "specs2-core"          % "4.7.0" % Test,
+      "org.specs2"  %% "specs2-matcher-extra" % "4.7.0" % Test
     )
   )
