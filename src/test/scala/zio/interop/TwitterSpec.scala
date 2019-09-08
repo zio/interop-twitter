@@ -11,7 +11,8 @@ import zio.test.Assertion._
 import zio.Runtime
 import scala.util.Try
 object TwitterSpec
-    extends DefaultRunnableSpec(
+    extends DefaultRunnableSpec({
+      val runtime = Runtime((), DefaultTestRunner.platform)
       suite("TwitterSpec")(
         suite("Task.fromTwitterFuture")(
           testM("return failing `Task` if future failed.") {
@@ -50,7 +51,7 @@ object TwitterSpec
         suite("Runtime.unsafeRunToTwitterFuture")(
           test("return successful `Future` if Task evaluation succeeded.") {
             assert(
-              Await.result(Runtime((), DefaultTestRunner.platform).unsafeRunToTwitterFuture(Task.succeed(2))),
+              Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))),
               equalTo(2)
             )
           },
@@ -58,7 +59,7 @@ object TwitterSpec
             val e    = new Throwable
             val task = Task.fail(e).unit
             val result =
-              Try(Await.result(Runtime((), DefaultTestRunner.platform).unsafeRunToTwitterFuture(task))).toEither
+              Try(Await.result(runtime.unsafeRunToTwitterFuture(task))).toEither
             assert(result, isLeft(equalTo(e)))
           },
           testM("ensure Task evaluation is interrupted together with Future.") {
@@ -67,7 +68,7 @@ object TwitterSpec
             val task: ZIO[Any, Throwable, Future[Int]] = for {
               promise <- zio.Promise.make[Throwable, Int]
               t       = promise.await.flatMap(_ => Task.effectTotal(value.incrementAndGet()))
-              future  = Runtime((), DefaultTestRunner.platform).unsafeRunToTwitterFuture(t)
+              future  = runtime.unsafeRunToTwitterFuture(t)
               _       = future.raise(ex)
               _       <- promise.succeed(1)
             } yield future
@@ -76,4 +77,4 @@ object TwitterSpec
           }
         )
       )
-    )
+    })
