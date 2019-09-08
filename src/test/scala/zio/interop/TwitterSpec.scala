@@ -63,7 +63,7 @@ object TwitterSpec
             val result =
               Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
                 case Failure(exception) => Some(exception)
-                case Success(_) => None
+                case Success(_)         => None
               }
 
             assert(result, isSome(equalTo(e)))
