@@ -10,6 +10,8 @@ import zio.test._
 import zio.test.Assertion._
 import zio.Runtime
 import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 object TwitterSpec
     extends DefaultRunnableSpec({
       val runtime = Runtime((), DefaultTestRunner.platform)
@@ -59,8 +61,12 @@ object TwitterSpec
             val e    = new Throwable
             val task = Task.fail(e).unit
             val result =
-              Try(Await.result(runtime.unsafeRunToTwitterFuture(task))).toEither
-            assert(result, isLeft(equalTo(e)))
+              Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
+                case Failure(exception) => Some(exception)
+                case Success(_) => None
+              }
+
+            assert(result, isSome(equalTo(e)))
           },
           testM("ensure Task evaluation is interrupted together with Future.") {
             val value = new AtomicInteger(0)
