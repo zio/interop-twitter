@@ -34,9 +34,9 @@ lazy val twitter = project
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"     %% "zio"                  % "1.0.0-RC12-1",
-      "com.twitter" %% "util-core"            % "19.9.0",
-      "dev.zio"     %% "zio-test"             % "1.0.0-RC12-1" % Test,
-      "dev.zio"     %% "zio-test-sbt"         % "1.0.0-RC12-1" % Test
+      "dev.zio"     %% "zio"          % "1.0.0-RC12-1",
+      "com.twitter" %% "util-core"    % "19.9.0",
+      "dev.zio"     %% "zio-test"     % "1.0.0-RC12-1" % Test,
+      "dev.zio"     %% "zio-test-sbt" % "1.0.0-RC12-1" % Test
     )
   )
