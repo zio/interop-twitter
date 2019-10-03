@@ -5,7 +5,7 @@ import explicitdeps.ExplicitDepsPlugin.autoImport._
 import sbtbuildinfo._
 import BuildInfoKeys._
 
-object ScalazBuild {
+object BuildHelper {
   val testDeps        = Seq("org.scalacheck"  %% "scalacheck"   % "1.14.2" % "test")
   val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2"  % "provided")
 
@@ -35,18 +35,19 @@ object ScalazBuild {
     buildInfoObject := "BuildInfo"
   )
 
+  val optimizerOptions =
+    Seq("-opt:l:inline", "-opt-inline-from:zio.internal.**")
+
   def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 13)) =>
-        std2xOptions
+        std2xOptions ++ optimizerOptions
       case Some((2, 12)) =>
         Seq(
           "-opt-warnings",
           "-Ywarn-extra-implicit",
           "-Ywarn-unused:_,imports",
           "-Ywarn-unused:imports",
-          "-opt:l:inline",
-          "-opt-inline-from:zio.internal.**",
           "-Ypartial-unification",
           "-Yno-adapted-args",
           "-Ywarn-inaccessible",
@@ -54,7 +55,7 @@ object ScalazBuild {
           "-Ywarn-nullary-override",
           "-Ywarn-nullary-unit",
           "-Xfuture"
-        ) ++ std2xOptions
+        ) ++ std2xOptions ++ optimizerOptions
       case Some((2, 11)) =>
         Seq(
           "-Ypartial-unification",
