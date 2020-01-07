@@ -36,7 +36,7 @@ lazy val twitter = project
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"     %% "zio"          % "1.0.0-RC17",
-      "com.twitter" %% "util-core"    % "19.11.0",
+      "com.twitter" %% "util-core"    % "19.12.0",
       "dev.zio"     %% "zio-test"     % "1.0.0-RC17" % Test,
       "dev.zio"     %% "zio-test-sbt" % "1.0.0-RC17" % Test
     )
