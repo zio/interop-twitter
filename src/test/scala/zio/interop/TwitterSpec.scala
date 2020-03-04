@@ -46,9 +46,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             a     <- fiber.await
           } yield a).fold(_ => false, exit => exit.toEither.isLeft)
 
-        task.map { b =>
-          assert(b)(isTrue) && assert(value.get())(equalTo(0))
-        }
+        task.map(b => assert(b)(isTrue) && assert(value.get())(equalTo(0)))
       }
     ),
     suite("Runtime.unsafeRunToTwitterFuture")(
