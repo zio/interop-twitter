@@ -11,13 +11,19 @@ inThisBuild(
         "John De Goes",
         "john@degoes.net",
         url("http://degoes.net")
+      ),
+      Developer(
+        "mijicd",
+        "Dejan Mijic",
+        "dmijic@acm.org",
+        url("http://github.com/mijicd")
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
     scmInfo := Some(
-      ScmInfo(url("https://github.com/zio/interop-future/"), "scm:git:git@github.com:zio/interop-future.git")
+      ScmInfo(url("https://github.com/zio/interop-twitter/"), "scm:git:git@github.com:zio/interop-twitter.git")
     )
   )
 )
