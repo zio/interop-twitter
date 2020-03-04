@@ -22,14 +22,14 @@ object TwitterSpec
             val future                                        = Task(Future.exception[Int](error))
             val task                                          = Task.fromTwitterFuture(future).unit
             val assertion: Assertion[Either[Throwable, Unit]] = equalTo(Left(error))
-            assertM(task.either, assertion)
+            assertM(task.either)(assertion)
           },
           testM("return successful `Task` if future succeeded.") {
             val value                             = 10
             val future                            = Task(Future.value(value))
             val task                              = Task.fromTwitterFuture(future).option
             val assertion: Assertion[Option[Int]] = equalTo(Some(value))
-            assertM(task, assertion)
+            assertM(task)(assertion)
           },
           testM("ensure future is interrupted together with task.") {
             val value = new AtomicInteger(0)
@@ -46,16 +46,13 @@ object TwitterSpec
               } yield a).fold(_ => false, exit => exit.toEither.isLeft)
 
             task.map { b =>
-              assert(b, isTrue) && assert(value.get(), equalTo(0))
+              assert(b)(isTrue) && assert(value.get())(equalTo(0))
             }
           }
         ),
         suite("Runtime.unsafeRunToTwitterFuture")(
           test("return successful `Future` if Task evaluation succeeded.") {
-            assert(
-              Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))),
-              equalTo(2)
-            )
+            assert(Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))))(equalTo(2))
           },
           test("return failed `Future` if Task evaluation failed.") {
             val e    = new Throwable
@@ -66,7 +63,7 @@ object TwitterSpec
                 case Success(_)         => None
               }
 
-            assert(result, isSome(equalTo(e)))
+            assert(result)(isSome(equalTo(e)))
           },
           testM("ensure Task evaluation is interrupted together with Future.") {
             val value = new AtomicInteger(0)
@@ -79,7 +76,7 @@ object TwitterSpec
               _       <- promise.succeed(1)
             } yield future
 
-            assertM(task.map(Await.result(_)).run, isInterrupted).map(_ && assert(value.get, equalTo(0)))
+            assertM(task.map(Await.result(_)).run)(isInterrupted).map(_ && assert(value.get)(equalTo(0)))
           }
         )
       )
