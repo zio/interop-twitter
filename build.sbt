@@ -11,13 +11,19 @@ inThisBuild(
         "John De Goes",
         "john@degoes.net",
         url("http://degoes.net")
+      ),
+      Developer(
+        "mijicd",
+        "Dejan Mijic",
+        "dmijic@acm.org",
+        url("http://github.com/mijicd")
       )
     ),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
     scmInfo := Some(
-      ScmInfo(url("https://github.com/zio/interop-future/"), "scm:git:git@github.com:zio/interop-future.git")
+      ScmInfo(url("https://github.com/zio/interop-twitter/"), "scm:git:git@github.com:zio/interop-twitter.git")
     )
   )
 )
@@ -33,9 +39,9 @@ lazy val twitter = project
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"     %% "zio"          % "1.0.0-RC17",
+      "dev.zio"     %% "zio"          % "1.0.0-RC18",
       "com.twitter" %% "util-core"    % "20.1.0",
-      "dev.zio"     %% "zio-test"     % "1.0.0-RC17" % Test,
-      "dev.zio"     %% "zio-test-sbt" % "1.0.0-RC17" % Test
+      "dev.zio"     %% "zio-test"     % "1.0.0-RC18" % Test,
+      "dev.zio"     %% "zio-test-sbt" % "1.0.0-RC18" % Test
     )
   )
