@@ -6,8 +6,8 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  val testDeps        = Seq("org.scalacheck"  %% "scalacheck"   % "1.14.3" % "test")
-  val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2"  % "provided")
+  val testDeps        = Seq("org.scalacheck" %% "scalacheck" % "1.14.3" % "test")
+  val compileOnlyDeps = Seq("com.github.ghik" %% "silencer-lib" % "1.4.2" % "provided")
 
   private val stdOptions = Seq(
     "-deprecation",
@@ -68,20 +68,21 @@ object BuildHelper {
           "-Ywarn-unused-import",
           "-Xfuture"
         ) ++ std2xOptions
-      case _ => Seq.empty
+      case _             => Seq.empty
     }
 
-  def stdSettings(prjName: String) = Seq(
-    name := s"$prjName",
-    scalacOptions := stdOptions,
-    crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
-    scalaVersion in ThisBuild := crossScalaVersions.value.head,
-    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-    libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
-      compilerPlugin("org.typelevel"   %% "kind-projector"  % "0.10.3"),
-      compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
-    ),
-    parallelExecution in Test := true,
-    incOptions ~= (_.withLogRecompileOnMacro(false))
-  )
+  def stdSettings(prjName: String) =
+    Seq(
+      name := s"$prjName",
+      scalacOptions := stdOptions,
+      crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
+      scalaVersion in ThisBuild := crossScalaVersions.value.head,
+      scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
+      libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
+        compilerPlugin("org.typelevel"   %% "kind-projector"  % "0.10.3"),
+        compilerPlugin("com.github.ghik" %% "silencer-plugin" % "1.4.2")
+      ),
+      parallelExecution in Test := true,
+      incOptions ~= (_.withLogRecompileOnMacro(false))
+    )
 }
