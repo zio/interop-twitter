@@ -18,14 +18,14 @@ object TwitterSpec extends DefaultRunnableSpec {
       suite("Task.fromTwitterFuture")(
         testM("return failing `Task` if future failed.") {
           val error  = new Exception
-          val future = Task(Future.exception[Int](error))
+          def future = Future.exception[Int](error)
           val task   = Task.fromTwitterFuture(future).unit
 
           assertM(task.either)(isLeft(equalTo(error)))
         },
         testM("return successful `Task` if future succeeded.") {
           val value  = 10
-          val future = Task(Future.value(value))
+          def future = Future.value(value)
           val task   = Task.fromTwitterFuture(future).option
 
           assertM(task)(isSome(equalTo(value)))
@@ -37,7 +37,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             override protected def onInterrupt(t: Throwable): Unit = setException(t)
           }
 
-          val future = Task(promise.flatMap(_ => Future(value.incrementAndGet())))
+          def future = promise.flatMap(_ => Future(value.incrementAndGet()))
 
           val task =
             (for {

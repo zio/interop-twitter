@@ -20,7 +20,7 @@ object Example extends App {
       for {
         _        <- putStrLn("Hello! What is your name?")
         name     <- getStrLn
-        greeting <- Task.fromTwitterFuture(Task(greet(name)))
+        greeting <- Task.fromTwitterFuture(greet(name))
         _        <- putStrLn(greeting)
       } yield ()
 
