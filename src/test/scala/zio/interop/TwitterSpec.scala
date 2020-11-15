@@ -44,7 +44,8 @@ object TwitterSpec extends DefaultRunnableSpec {
             _     <- fiber.interrupt
             _     <- Task.effect(promise.setDone())
             a     <- fiber.await
-          } yield assert(a.toEither)(isLeft) && assert(value.get)(isZero)
+            v     <- Task.effectTotal(value.get)
+          } yield assert(a.toEither)(isLeft) && assert(v)(isZero)
         }
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
@@ -52,8 +53,9 @@ object TwitterSpec extends DefaultRunnableSpec {
           assert(Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))))(equalTo(2))
         },
         test("return failed `Future` if Task evaluation failed.") {
-          val error  = new Exception
-          val task   = Task.fail(error).unit
+          val error = new Exception
+          val task  = Task.fail(error).unit
+
           val result =
             Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
               case Failure(exception) => Some(exception)
