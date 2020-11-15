@@ -39,15 +39,12 @@ object TwitterSpec extends DefaultRunnableSpec {
 
           def future = promise.flatMap(_ => Future(value.incrementAndGet()))
 
-          val task =
-            (for {
-              fiber <- Task.fromTwitterFuture(future).fork
-              _     <- fiber.interrupt
-              _     <- Task.effect(promise.setDone())
-              a     <- fiber.await
-            } yield a).fold(_ => false, _.toEither.isLeft)
-
-          task.map(b => assert(b)(isTrue) && assert(value.get())(isZero))
+          for {
+            fiber <- Task.fromTwitterFuture(future).fork
+            _     <- fiber.interrupt
+            _     <- Task.effect(promise.setDone())
+            a     <- fiber.await
+          } yield assert(a.toEither)(isLeft) && assert(value.get)(isZero)
         }
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
