@@ -17,7 +17,6 @@
 package zio.interop
 
 import com.twitter.util.{ Future, FutureCancelledException, Promise, Return, Throw }
-import zio.Cause
 import zio.{ Runtime, Task, UIO, ZIO }
 
 package object twitter {
@@ -44,9 +43,7 @@ package object twitter {
 
   implicit class RuntimeOps[R](private val runtime: Runtime[R]) extends AnyVal {
     def unsafeRunToTwitterFuture[A](io: ZIO[R, Throwable, A]): Future[A] = {
-      val promise                                = Promise[A]()
-      def failure(cause: Cause[Throwable]): Unit = promise.setException(cause.squash)
-      def success(value: A): Unit                = promise.setValue(value)
+      val promise = Promise[A]()
 
       runtime.unsafeRunAsync {
         io.fork.flatMap { f =>
@@ -55,7 +52,7 @@ package object twitter {
           }
           f.join
         }
-      }(_.fold(failure, success))
+      }(_.fold(c => promise.setException(c.squash), promise.setValue))
 
       promise
     }
