@@ -63,19 +63,16 @@ object TwitterSpec extends DefaultRunnableSpec {
           assert(result)(isSome(equalTo(error)))
         },
         testM("ensure Task evaluation is interrupted together with Future.") {
-          val value = new AtomicInteger(0)
-          val error = new Exception
-
-          val task =
-            for {
-              promise <- zio.Promise.make[Throwable, Int]
-              t        = promise.await *> Task.effectTotal(value.incrementAndGet())
-              future   = runtime.unsafeRunToTwitterFuture(t)
-              _        = future.raise(error)
-              _       <- promise.succeed(1)
-            } yield future
-
-          assertM(task.map(Await.result(_)).run)(isInterrupted).map(_ && assert(value.get)(equalTo(0)))
+          for {
+            promise <- zio.Promise.make[Throwable, Unit]
+            ref     <- zio.Ref.make(false)
+            task     = promise.await *> ref.set(true)
+            future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
+            _       <- Task.effect(future.raise(new Exception))
+            _       <- promise.succeed(())
+            value   <- ref.get
+            status  <- Task.effect(Await.result(future)).either
+          } yield assert(value)(isFalse) && assert(status)(isLeft)
         }
       )
     )
