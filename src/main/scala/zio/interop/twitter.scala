@@ -45,14 +45,15 @@ package object twitter {
     def unsafeRunToTwitterFuture[A](rio: RIO[R, A]): Future[A] = {
       val promise = Promise[A]()
 
-      runtime.unsafeRunAsync {
+      val interrupter =
         rio.fork.flatMap { f =>
           promise.setInterruptHandler {
             case _ => runtime.unsafeRunAsync_(f.interrupt)
           }
           f.join
         }
-      }(_.fold(c => promise.setException(c.squash), promise.setValue))
+
+      runtime.unsafeRunAsync(interrupter)(_.fold(c => promise.setException(c.squash), promise.setValue))
 
       promise
     }
