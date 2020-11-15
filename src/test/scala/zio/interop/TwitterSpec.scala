@@ -3,7 +3,7 @@ package zio.interop
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.twitter.util.{ Await, Future, Promise }
-import zio.{ Task, ZIO }
+import zio.Task
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
@@ -66,15 +66,17 @@ object TwitterSpec extends DefaultRunnableSpec {
           assert(result)(isSome(equalTo(e)))
         },
         testM("ensure Task evaluation is interrupted together with Future.") {
-          val value                                  = new AtomicInteger(0)
-          val ex                                     = new Exception
-          val task: ZIO[Any, Throwable, Future[Int]] = for {
-            promise <- zio.Promise.make[Throwable, Int]
-            t        = promise.await.flatMap(_ => Task.effectTotal(value.incrementAndGet()))
-            future   = runtime.unsafeRunToTwitterFuture(t)
-            _        = future.raise(ex)
-            _       <- promise.succeed(1)
-          } yield future
+          val value = new AtomicInteger(0)
+          val ex    = new Exception
+
+          val task =
+            for {
+              promise <- zio.Promise.make[Throwable, Int]
+              t        = promise.await *> Task.effectTotal(value.incrementAndGet())
+              future   = runtime.unsafeRunToTwitterFuture(t)
+              _        = future.raise(ex)
+              _       <- promise.succeed(1)
+            } yield future
 
           assertM(task.map(Await.result(_)).run)(isInterrupted).map(_ && assert(value.get)(equalTo(0)))
         }
