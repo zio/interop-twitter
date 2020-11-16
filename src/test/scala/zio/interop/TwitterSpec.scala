@@ -69,7 +69,7 @@ object TwitterSpec extends DefaultRunnableSpec {
           for {
             promise <- zio.Promise.make[Throwable, Unit]
             ref     <- zio.Ref.make(false)
-            task    = promise.await *> ref.set(true)
+            task     = promise.await *> ref.set(true)
             future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
             _       <- Task.effect(future.raise(new Exception))
             _       <- promise.succeed(())
