@@ -7,6 +7,7 @@ import zio.Task
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect.flaky
 
 import scala.util.{ Failure, Success, Try }
 
@@ -68,14 +69,14 @@ object TwitterSpec extends DefaultRunnableSpec {
           for {
             promise <- zio.Promise.make[Throwable, Unit]
             ref     <- zio.Ref.make(false)
-            task     = promise.await *> ref.set(true)
+            task    = promise.await *> ref.set(true)
             future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
             _       <- Task.effect(future.raise(new Exception))
             _       <- promise.succeed(())
             value   <- ref.get
             status  <- Task.effect(Await.result(future)).either
           } yield assert(value)(isFalse) && assert(status)(isLeft)
-        }
+        } @@ flaky
       )
     )
 }
