@@ -3,10 +3,11 @@ package zio.interop
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.twitter.util.{ Await, Future, Promise }
-import zio.{ Task, ZIO }
+import zio.Task
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect.flaky
 
 import scala.util.{ Failure, Success, Try }
 
@@ -39,15 +40,13 @@ object TwitterSpec extends DefaultRunnableSpec {
 
           def future = promise.flatMap(_ => Future(value.incrementAndGet()))
 
-          val task =
-            (for {
-              fiber <- Task.fromTwitterFuture(future).fork
-              _     <- fiber.interrupt
-              _     <- Task.effect(promise.setDone())
-              a     <- fiber.await
-            } yield a).fold(_ => false, exit => exit.toEither.isLeft)
-
-          task.map(b => assert(b)(isTrue) && assert(value.get())(equalTo(0)))
+          for {
+            fiber <- Task.fromTwitterFuture(future).fork
+            _     <- fiber.interrupt
+            _     <- Task.effect(promise.setDone())
+            a     <- fiber.await
+            v     <- Task.effectTotal(value.get)
+          } yield assert(a.toEither)(isLeft) && assert(v)(isZero)
         }
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
@@ -55,29 +54,29 @@ object TwitterSpec extends DefaultRunnableSpec {
           assert(Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))))(equalTo(2))
         },
         test("return failed `Future` if Task evaluation failed.") {
-          val e      = new Throwable
-          val task   = Task.fail(e).unit
+          val error = new Exception
+          val task  = Task.fail(error).unit
+
           val result =
             Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
               case Failure(exception) => Some(exception)
               case Success(_)         => None
             }
 
-          assert(result)(isSome(equalTo(e)))
+          assert(result)(isSome(equalTo(error)))
         },
         testM("ensure Task evaluation is interrupted together with Future.") {
-          val value                                  = new AtomicInteger(0)
-          val ex                                     = new Exception
-          val task: ZIO[Any, Throwable, Future[Int]] = for {
-            promise <- zio.Promise.make[Throwable, Int]
-            t        = promise.await.flatMap(_ => Task.effectTotal(value.incrementAndGet()))
-            future   = runtime.unsafeRunToTwitterFuture(t)
-            _        = future.raise(ex)
-            _       <- promise.succeed(1)
-          } yield future
-
-          assertM(task.map(Await.result(_)).run)(isInterrupted).map(_ && assert(value.get)(equalTo(0)))
-        }
+          for {
+            promise <- zio.Promise.make[Throwable, Unit]
+            ref     <- zio.Ref.make(false)
+            task     = promise.await *> ref.set(true)
+            future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
+            _       <- Task.effect(future.raise(new Exception))
+            _       <- promise.succeed(())
+            value   <- ref.get
+            status  <- Task.effect(Await.result(future)).either
+          } yield assert(value)(isFalse) && assert(status)(isLeft)
+        } @@ flaky
       )
     )
 }
