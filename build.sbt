@@ -31,6 +31,8 @@ inThisBuild(
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
+lazy val zioVersion = "1.0.8"
+
 lazy val twitter = project
   .in(file("."))
   .enablePlugins(BuildInfoPlugin)
@@ -39,9 +41,9 @@ lazy val twitter = project
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"     %% "zio"          % "1.0.5",
+      "dev.zio"     %% "zio"          % zioVersion,
       "com.twitter" %% "util-core"    % "20.12.0",
-      "dev.zio"     %% "zio-test"     % "1.0.5" % Test,
-      "dev.zio"     %% "zio-test-sbt" % "1.0.5" % Test
+      "dev.zio"     %% "zio-test"     % zioVersion % Test,
+      "dev.zio"     %% "zio-test-sbt" % zioVersion % Test
     )
   )
