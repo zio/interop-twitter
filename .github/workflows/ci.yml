@@ -11,6 +11,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
     steps:
@@ -27,11 +28,12 @@ jobs:
 
   test:
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.11.12', '2.12.12', '2.13.3']
+        scala: ['2.11.12', '2.12.15', '2.13.7']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.4.0
@@ -46,9 +48,17 @@ jobs:
       - name: Run tests
         run: sbt ++${{ matrix.scala }}! test
 
-  publish:
+  ci:
     runs-on: ubuntu-20.04
     needs: [lint, test]
+    steps:
+      - name: Aggregate outcomes
+        run: echo "build succeeded"
+
+  publish:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    needs: [ci]
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
