@@ -11,6 +11,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
     steps:
@@ -23,15 +24,16 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt check
+        run: ./sbt check
 
   test:
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.11.12', '2.12.12', '2.13.3']
+        scala: ['2.11.12', '2.12.15', '2.13.7']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.4.0
@@ -44,11 +46,19 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        run: sbt ++${{ matrix.scala }}! test
+        run: ./sbt ++${{ matrix.scala }}! test
+
+  ci:
+    runs-on: ubuntu-20.04
+    needs: [lint, test]
+    steps:
+      - name: Aggregate outcomes
+        run: echo "build succeeded"
 
   publish:
     runs-on: ubuntu-20.04
-    needs: [lint, test]
+    timeout-minutes: 30
+    needs: [ci]
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
@@ -60,7 +70,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts
-        run: sbt ci-release
+        run: ./sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
