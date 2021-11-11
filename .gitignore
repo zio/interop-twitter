@@ -7,3 +7,5 @@ project/secrets.tar.xz
 project/zecret
 target
 test-output/
+.idea/
+.bsp/
