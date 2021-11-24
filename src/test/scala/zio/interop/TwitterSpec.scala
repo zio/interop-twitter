@@ -9,7 +9,7 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.flaky
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.Try
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
@@ -54,16 +54,11 @@ object TwitterSpec extends DefaultRunnableSpec {
           assert(Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))))(equalTo(2))
         },
         test("return failed `Future` if Task evaluation failed.") {
-          val error = new Exception
-          val task  = Task.fail(error).unit
+          val error  = new Exception
+          val task   = Task.fail(error).unit
+          val result = Try(Await.result(runtime.unsafeRunToTwitterFuture(task)))
 
-          val result =
-            Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
-              case Failure(exception) => Some(exception)
-              case Success(_)         => None
-            }
-
-          assert(result)(isSome(equalTo(error)))
+          assert(result)(isFailure(equalTo(error)))
         },
         testM("ensure Task evaluation is interrupted together with Future.") {
           for {
