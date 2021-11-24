@@ -1,6 +1,6 @@
 package zio.interop
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 
 import com.twitter.util.{ Await, Future, Promise }
 import zio.Task
@@ -32,13 +32,13 @@ object TwitterSpec extends DefaultRunnableSpec {
           assertM(task)(isSome(equalTo(value)))
         },
         testM("ensure future is interrupted together with task.") {
-          val value = new AtomicInteger(0)
+          val value = new AtomicBoolean(false)
 
           val promise = new Promise[Unit] with Promise.InterruptHandler {
             override protected def onInterrupt(t: Throwable): Unit = setException(t)
           }
 
-          def future = promise.flatMap(_ => Future(value.incrementAndGet()))
+          def future = promise.map(_ => value.set(true))
 
           for {
             fiber <- Task.fromTwitterFuture(future).fork
@@ -46,7 +46,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             _     <- Task.effect(promise.setDone())
             a     <- fiber.await
             v     <- Task.effectTotal(value.get)
-          } yield assert(a.toEither)(isLeft) && assert(v)(isZero)
+          } yield assert(a.toEither)(isLeft) && assert(v)(isFalse)
         }
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
