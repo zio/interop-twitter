@@ -31,7 +31,7 @@ package object twitter {
     private def toTask[A](future: Task[Future[A]]): Task[A] =
       Task.uninterruptibleMask { restore =>
         future.flatMap { f =>
-          restore(Task.effectAsync { cb: (Task[A] => Unit) =>
+          restore(Task.async { cb: (Task[A] => Unit) =>
             val _ = f.respond {
               case Return(a) => cb(Task.succeed(a))
               case Throw(e)  => cb(Task.fail(e))
@@ -43,16 +43,16 @@ package object twitter {
 
   implicit class RuntimeOps[R](private val runtime: Runtime[R]) extends AnyVal {
     def unsafeRunToTwitterFuture[A](rio: RIO[R, A]): Future[A] = {
-      val promise = Promise[A]()
+      lazy val promise = Promise[A]()
 
       val interruptible =
         for {
           f <- rio.fork
-          _ <- Task.effect(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync_(f.interrupt) })
+          _ <- Task.attempt(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync(f.interrupt) })
           r <- f.join
         } yield r
 
-      runtime.unsafeRunAsync(interruptible)(_.fold(c => promise.setException(c.squash), promise.setValue))
+      runtime.unsafeRunAsyncWith(interruptible)(_.fold(c => promise.setException(c.squash), promise.setValue))
 
       promise
     }
