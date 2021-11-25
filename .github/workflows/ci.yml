@@ -1,16 +1,11 @@
 name: CI
 
-env:
-  JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags -Xmx3G
-  JVM_OPTS: -XX:+PrintCommandLineFlags -Xmx3G
-
 on:
   pull_request:
   push:
     branches: 
       - 'master'
       - 'series/2.x'
-      - 'zio2x-upgrade'
   release:
       types:
         - published
@@ -39,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['8', '11']
+        java: ['adopt@1.8', 'adopt@1.11']
         scala: ['2.11.12', '2.12.15', '2.13.7']
     steps:
       - name: Checkout current branch
