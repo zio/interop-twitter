@@ -1,19 +1,17 @@
 package zio.interop
 
-import java.util.concurrent.atomic.AtomicInteger
-import com.twitter.util.{ Await, Duration, Future, Promise }
+import com.twitter.util.{ Await, Future, Promise }
 import zio.Task
 import zio.interop.twitter._
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.flaky
+import zio.test._
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.util.{ Failure, Success, Try }
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
-
-  val maxDuration = Duration.fromSeconds(5)
 
   override def spec =
     suite("TwitterSpec")(
@@ -59,7 +57,7 @@ object TwitterSpec extends DefaultRunnableSpec {
           val task  = Task.fail(error)
 
           val result =
-            Try(Await.result(runtime.unsafeRunToTwitterFuture(task), maxDuration)) match {
+            Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
               case Failure(exception) => Some(exception)
               case Success(_)         => None
             }
@@ -75,7 +73,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             _       <- Task.attempt(future.raise(new Exception))
             _       <- promise.succeed(())
             value   <- ref.get
-            status  <- Task.attempt(Await.result(future, maxDuration)).either
+            status  <- Task.attempt(Await.result(future)).either
           } yield assert(value)(isFalse) && assert(status)(isLeft)
         } @@ flaky
       )
