@@ -29,7 +29,15 @@ package object twitter {
               case Return(a) => cb(Task.succeedNow(a))
               case Throw(e)  => cb(Task.fail(e))
             }
-          }).onInterrupt(UIO(future.raise(new FutureCancelledException)))
+          }).onInterrupt {
+            UIO(future.raise(new FutureCancelledException)) *>
+              UIO.effectAsync { (cb: UIO[Unit] => Unit) =>
+                future.respond {
+                  case Return(a) => cb(Task.succeedNow(()))
+                  case Throw(e)  => cb(Task.succeedNow(()))
+                }
+              }
+          }
         }
       }
   }

@@ -3,15 +3,25 @@ package zio.interop
 import com.twitter.util.{ Await, Future, FuturePool }
 import java.util.concurrent.atomic.AtomicInteger
 import zio._
-import zio.duration._
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.nonFlaky
-import zio.test.environment.Live
+import zio.internal._
+
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 
 object TwitterSpec extends DefaultRunnableSpec {
-  val runtime = runner.runtime
+  override val runner =
+    defaultTestRunner.withPlatform { platform =>
+      platform.withExecutor(
+        Executor.fromExecutionContext(Platform.defaultYieldOpCount)(
+          ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+        )
+      )
+    }
+  val runtime         = runner.runtime
 
   def spec =
     suite("TwitterSpec")(
@@ -29,19 +39,19 @@ object TwitterSpec extends DefaultRunnableSpec {
           } yield assert(result)(equalTo(value))
         },
         testM("ensures future is interrupted") {
+          val pool: FuturePool                                    =
+            FuturePool.interruptible(runtime.platform.executor.asECES)
           def infiniteFuture(ref: AtomicInteger): Future[Nothing] =
-            FuturePool.interruptibleUnboundedPool(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
+            pool(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
 
           for {
             ref   <- UIO(new AtomicInteger(0))
             fiber <- Task.fromTwitterFuture(infiniteFuture(ref)).fork
             _     <- fiber.interrupt
-            _     <- Live.live(clock.sleep(20.millis))
             v1    <- UIO(ref.get)
-            _     <- Live.live(clock.sleep(10.millis))
             v2    <- UIO(ref.get)
           } yield assert(v1)(equalTo(v2))
-        } @@ nonFlaky
+        } @@ nonFlaky(100000)
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
         testM("produces successful futures if Task evaluation succeeds") {
@@ -64,7 +74,7 @@ object TwitterSpec extends DefaultRunnableSpec {
           } yield assert(status)(isLeft)
         } @@ nonFlaky
       )
-    )
+    ) @@ TestAspect.sequential
 
   private def unsafeAwait[A](task: Task[A]): A =
     Await.result(runtime.unsafeRunToTwitterFuture(task))
