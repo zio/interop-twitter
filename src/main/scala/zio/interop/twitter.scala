@@ -32,7 +32,7 @@ package object twitter {
       Task.uninterruptibleMask { restore =>
         future.flatMap { f =>
           restore(Task.effectAsync { cb: (Task[A] => Unit) =>
-            val _ = f.respond {
+            f.respond {
               case Return(a) => cb(Task.succeed(a))
               case Throw(e)  => cb(Task.fail(e))
             }
