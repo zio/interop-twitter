@@ -1,6 +1,6 @@
 package zio.interop
 
-import com.twitter.util.{ Await, Future }
+import com.twitter.util.{ Await, Future, FuturePool }
 import java.util.concurrent.atomic.AtomicInteger
 import zio._
 import zio.duration._
@@ -9,7 +9,6 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.nonFlaky
 import zio.test.environment.Live
-import com.twitter.util.FuturePool
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
