@@ -54,7 +54,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             result <- Task(unsafeAwait(Task.fail(error))).either
           } yield assert(result)(isLeft(equalTo(error)))
         },
-        testM("ensures Task evaluation is interrupted together with Future.") {
+        testM("ensures task is interrupted") {
           for {
             promise <- zio.Promise.make[Throwable, Unit]
             ref     <- zio.Ref.make(false)
