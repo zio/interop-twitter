@@ -22,15 +22,8 @@ import zio.{ RIO, Runtime, Task, UIO }
 package object twitter {
   implicit class TaskObjOps(private val obj: Task.type) extends AnyVal {
     final def fromTwitterFuture[A](future: => Future[A]): Task[A] =
-      toTask(Task(future))
-
-    @deprecated("Use fromTwitterFuture[A](future: => Future[A]) instead", "v20.6.0.0-RC2")
-    final def fromTwitterFuture[A](future: Task[Future[A]]): Task[A] =
-      toTask(future)
-
-    private def toTask[A](future: Task[Future[A]]): Task[A] =
       Task.uninterruptibleMask { restore =>
-        future.flatMap { f =>
+        Task(future).flatMap { f =>
           restore(Task.effectAsync { cb: (Task[A] => Unit) =>
             f.respond {
               case Return(a) => cb(Task.succeed(a))
