@@ -56,15 +56,10 @@ object TwitterSpec extends DefaultRunnableSpec {
         },
         testM("ensures task is interrupted") {
           for {
-            promise <- Promise.make[Throwable, Unit]
-            ref     <- Ref.make(false)
-            task     = promise.await *> ref.set(true)
-            future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
-            _       <- Task.effect(future.raise(new Exception))
-            _       <- promise.succeed(())
-            value   <- ref.get
-            status  <- Task.effect(Await.result(future)).either
-          } yield assert(value)(isFalse) && assert(status)(isLeft)
+            future <- Task(runtime.unsafeRunToTwitterFuture(UIO.never))
+            _      <- Task(future.raise(new Exception))
+            status <- Task(Await.result(future)).either
+          } yield assert(status)(isLeft)
         } @@ nonFlaky
       )
     )

@@ -48,7 +48,7 @@ package object twitter {
       val interruptible =
         for {
           f <- rio.fork
-          _ <- Task.effect(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync_(f.interrupt) })
+          _ <- Task(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync_(f.interrupt) })
           r <- f.join
         } yield r
 
