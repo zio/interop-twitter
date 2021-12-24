@@ -9,6 +9,7 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.nonFlaky
 import zio.test.environment.Live
+import com.twitter.util.FuturePool
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
@@ -30,7 +31,7 @@ object TwitterSpec extends DefaultRunnableSpec {
         },
         testM("ensures future is interrupted") {
           def infiniteFuture(ref: AtomicInteger): Future[Nothing] =
-            Future(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
+            FuturePool.interruptibleUnboundedPool(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
 
           for {
             ref   <- UIO(new AtomicInteger(0))
