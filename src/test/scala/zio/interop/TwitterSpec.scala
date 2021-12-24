@@ -1,13 +1,14 @@
 package zio.interop
 
-import java.util.concurrent.atomic.AtomicBoolean
-
-import com.twitter.util.{ Await, Future, Promise => TwitterPromise }
+import com.twitter.util.{ Await, Future }
+import java.util.concurrent.atomic.AtomicInteger
 import zio._
+import zio.duration._
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.nonFlaky
+import zio.test.environment.Live
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
@@ -27,18 +28,18 @@ object TwitterSpec extends DefaultRunnableSpec {
             result <- Task.fromTwitterFuture(Future.value(value))
           } yield assert(result)(equalTo(value))
         },
-        testM("ensures future is interrupted together with task") {
+        testM("ensures future is interrupted") {
+          def infiniteFuture(ref: AtomicInteger): Future[Nothing] =
+            Future(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
+
           for {
-            interrupted <- UIO(new AtomicBoolean(false))
-            promise     <- UIO {
-                             val p = new TwitterPromise[Int]
-                             p.setInterruptHandler { case _ => interrupted.set(true) }
-                             p.map(_ + 1)
-                           }
-            fiber       <- Task.fromTwitterFuture(promise).fork
-            _           <- fiber.interrupt
-            interrupted <- UIO(interrupted.get)
-          } yield assert(interrupted)(isTrue)
+            ref   <- UIO(new AtomicInteger(0))
+            fiber <- Task.fromTwitterFuture(infiniteFuture(ref)).fork
+            _     <- fiber.interrupt
+            v1    <- UIO(ref.get)
+            _     <- Live.live(clock.sleep(10.millis))
+            v2    <- UIO(ref.get)
+          } yield assert(v1)(equalTo(v2))
         } @@ nonFlaky
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(

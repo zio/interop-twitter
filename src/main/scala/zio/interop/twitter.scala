@@ -21,17 +21,19 @@ import zio.{ RIO, Runtime, Task, UIO }
 
 package object twitter {
   implicit class TaskObjOps(private val obj: Task.type) extends AnyVal {
-    final def fromTwitterFuture[A](future: => Future[A]): Task[A] =
-      Task.uninterruptibleMask { restore =>
-        Task(future).flatMap { f =>
-          restore(Task.effectAsync { cb: (Task[A] => Unit) =>
-            f.respond {
-              case Return(a) => cb(Task.succeed(a))
+    final def fromTwitterFuture[A](future: => Future[A]): Task[A] = {
+      Task.effectSuspend {
+        println("effectSuspend")
+        Task(future).flatMap { future =>
+          Task.effectAsync { (cb: Task[A] => Unit) =>
+            future.respond {
+              case Return(a) => cb(Task.succeedNow(a))
               case Throw(e)  => cb(Task.fail(e))
             }
-          }).onInterrupt(UIO(f.raise(new FutureCancelledException)))
+          }.onInterrupt(UIO(future.raise(new FutureCancelledException)))
         }
       }
+    }
   }
 
   implicit class RuntimeOps[R](private val runtime: Runtime[R]) extends AnyVal {
