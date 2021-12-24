@@ -37,7 +37,6 @@ object TwitterSpec extends DefaultRunnableSpec {
             ref   <- UIO(new AtomicInteger(0))
             fiber <- Task.fromTwitterFuture(infiniteFuture(ref)).fork
             _     <- fiber.interrupt
-            _     <- Live.live(clock.sleep(10.millis))
             v1    <- UIO(ref.get)
             _     <- Live.live(clock.sleep(10.millis))
             v2    <- UIO(ref.get)
