@@ -2,12 +2,12 @@ package zio.interop
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.twitter.util.{ Await, Future, Promise }
-import zio.{ Task, UIO }
+import com.twitter.util.{ Await, Future, Promise => TwitterPromise }
+import zio._
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestAspect.flaky
+import zio.test.TestAspect.nonFlaky
 
 object TwitterSpec extends DefaultRunnableSpec {
   val runtime = runner.runtime
@@ -31,7 +31,7 @@ object TwitterSpec extends DefaultRunnableSpec {
           for {
             interrupted <- UIO(new AtomicBoolean(false))
             promise     <- UIO {
-                             val p = new Promise[Int]
+                             val p = new TwitterPromise[Int]
                              p.setInterruptHandler { case _ => interrupted.set(true) }
                              p.map(_ + 1)
                            }
@@ -39,7 +39,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             _           <- fiber.interrupt
             interrupted <- UIO(interrupted.get)
           } yield assert(interrupted)(isTrue)
-        }
+        } @@ nonFlaky
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
         testM("produces successful futures if Task evaluation succeeds") {
@@ -56,8 +56,8 @@ object TwitterSpec extends DefaultRunnableSpec {
         },
         testM("ensures task is interrupted") {
           for {
-            promise <- zio.Promise.make[Throwable, Unit]
-            ref     <- zio.Ref.make(false)
+            promise <- Promise.make[Throwable, Unit]
+            ref     <- Ref.make(false)
             task     = promise.await *> ref.set(true)
             future  <- Task.effect(runtime.unsafeRunToTwitterFuture(task))
             _       <- Task.effect(future.raise(new Exception))
@@ -65,7 +65,7 @@ object TwitterSpec extends DefaultRunnableSpec {
             value   <- ref.get
             status  <- Task.effect(Await.result(future)).either
           } yield assert(value)(isFalse) && assert(status)(isLeft)
-        } @@ flaky
+        } @@ nonFlaky
       )
     )
 
