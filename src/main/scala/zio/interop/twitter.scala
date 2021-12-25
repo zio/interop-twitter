@@ -33,8 +33,8 @@ package object twitter {
             UIO(future.raise(new FutureCancelledException)) *>
               UIO.effectAsync { (cb: UIO[Unit] => Unit) =>
                 future.respond {
-                  case Return(a) => cb(Task.succeedNow(()))
-                  case Throw(e)  => cb(Task.succeedNow(()))
+                  case Return(_) => cb(Task.unit)
+                  case Throw(_)  => cb(Task.unit)
                 }
               }
           }
