@@ -6,22 +6,21 @@ import zio._
 import zio.interop.twitter._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestAspect.nonFlaky
+import zio.test.TestAspect.{ nonFlaky, sequential }
 import zio.internal._
 
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 object TwitterSpec extends DefaultRunnableSpec {
-  override val runner =
-    defaultTestRunner.withPlatform { platform =>
-      platform.withExecutor(
-        Executor.fromExecutionContext(Platform.defaultYieldOpCount)(
-          ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
-        )
-      )
-    }
-  val runtime         = runner.runtime
+  override val runner = {
+    val ec       = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+    val executor = Executor.fromExecutionContext(Platform.defaultYieldOpCount)(ec)
+
+    defaultTestRunner.withPlatform(_.withExecutor(executor))
+  }
+
+  val runtime = runner.runtime
 
   def spec =
     suite("TwitterSpec")(
@@ -39,8 +38,8 @@ object TwitterSpec extends DefaultRunnableSpec {
           } yield assert(result)(equalTo(value))
         },
         testM("ensures future is interrupted") {
-          val pool: FuturePool                                    =
-            FuturePool.interruptible(runtime.platform.executor.asECES)
+          val pool = FuturePool.interruptible(runtime.platform.executor.asECES)
+
           def infiniteFuture(ref: AtomicInteger): Future[Nothing] =
             pool(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
 
@@ -72,9 +71,9 @@ object TwitterSpec extends DefaultRunnableSpec {
             _      <- Task(future.raise(new Exception))
             status <- Task(Await.result(future)).either
           } yield assert(status)(isLeft)
-        } @@ nonFlaky
+        } @@ nonFlaky(100000)
       )
-    ) @@ TestAspect.sequential
+    ) @@ sequential
 
   private def unsafeAwait[A](task: Task[A]): A =
     Await.result(runtime.unsafeRunToTwitterFuture(task))
