@@ -22,21 +22,22 @@ import zio.{ RIO, Runtime, Task, UIO }
 package object twitter {
   implicit class TaskObjOps(private val obj: Task.type) extends AnyVal {
     final def fromTwitterFuture[A](future: => Future[A]): Task[A] =
-      toTask(Task(future))
-
-    @deprecated("Use fromTwitterFuture[A](future: => Future[A]) instead", "v20.6.0.0-RC2")
-    final def fromTwitterFuture[A](future: Task[Future[A]]): Task[A] =
-      toTask(future)
-
-    private def toTask[A](future: Task[Future[A]]): Task[A] =
       Task.uninterruptibleMask { restore =>
-        future.flatMap { f =>
-          restore(Task.effectAsync { cb: (Task[A] => Unit) =>
-            val _ = f.respond {
-              case Return(a) => cb(Task.succeed(a))
+        Task(future).flatMap { future =>
+          restore(Task.effectAsync { (cb: Task[A] => Unit) =>
+            future.respond {
+              case Return(a) => cb(Task.succeedNow(a))
               case Throw(e)  => cb(Task.fail(e))
             }
-          }).onInterrupt(UIO(f.raise(new FutureCancelledException)))
+          }).onInterrupt {
+            UIO(future.raise(new FutureCancelledException)) *>
+              UIO.effectAsync { (cb: UIO[Unit] => Unit) =>
+                future.respond {
+                  case Return(_) => cb(Task.unit)
+                  case Throw(_)  => cb(Task.unit)
+                }
+              }
+          }
         }
       }
   }
@@ -48,7 +49,7 @@ package object twitter {
       val interruptible =
         for {
           f <- rio.fork
-          _ <- Task.effect(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync_(f.interrupt) })
+          _ <- Task(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync_(f.interrupt) })
           r <- f.join
         } yield r
 
