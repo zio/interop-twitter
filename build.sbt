@@ -5,9 +5,9 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 inThisBuild(
   List(
     organization := "dev.zio",
-    homepage := Some(url("https://zio.dev")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers := List(
+    homepage     := Some(url("https://zio.dev")),
+    licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers   := List(
       Developer(
         "jdegoes",
         "John De Goes",

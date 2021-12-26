@@ -1,81 +1,79 @@
 package zio.interop
 
-import com.twitter.util.{ Await, Future, Promise }
-import zio.Task
-import zio.interop.twitter._
-import zio.test.Assertion._
-import zio.test.TestAspect.flaky
-import zio.test._
-
+import com.twitter.util.{ Await, Future, FuturePool }
 import java.util.concurrent.atomic.AtomicInteger
-import scala.util.{ Failure, Success, Try }
+import zio.{ Executor, RuntimeConfig, Task, UIO }
+import zio.interop.twitter._
+import zio.test._
+import zio.test.Assertion._
+import zio.test.TestAspect.{ nonFlaky, sequential }
+
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
 
 object TwitterSpec extends DefaultRunnableSpec {
+  override val runner = {
+    val ec       = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+    val executor = Executor.fromExecutionContext(RuntimeConfig.defaultYieldOpCount)(ec)
+
+    defaultTestRunner.withRuntimeConfig(_.copy(executor = executor))
+  }
+
   val runtime = runner.runtime
 
-  override def spec =
+  def spec =
     suite("TwitterSpec")(
       suite("Task.fromTwitterFuture")(
-        test("return failing `Task` if future failed.") {
-          val error  = new Exception
-          def future = Future.exception[Int](error)
-          val task   = Task.fromTwitterFuture(future).unit
-
-          assertM(task.either)(isLeft(equalTo(error)))
+        test("lifts failed futures") {
+          for {
+            error  <- UIO(new Exception)
+            result <- Task.fromTwitterFuture(Future.exception(error)).either
+          } yield assert(result)(isLeft(equalTo(error)))
         },
-        test("return successful `Task` if future succeeded.") {
-          val value  = 10
-          def future = Future.value(value)
-          val task   = Task.fromTwitterFuture(future).option
-
-          assertM(task)(isSome(equalTo(value)))
+        test("lifts successful futures") {
+          for {
+            value  <- UIO(10)
+            result <- Task.fromTwitterFuture(Future.value(value))
+          } yield assert(result)(equalTo(value))
         },
-        test("ensure future is interrupted together with task.") {
-          val value = new AtomicInteger(0)
+        test("ensures future is interrupted") {
+          val pool = FuturePool.interruptible(runtime.runtimeConfig.executor.asExecutionContextExecutorService)
 
-          val promise = new Promise[Unit] with Promise.InterruptHandler {
-            override protected def onInterrupt(t: Throwable): Unit = setException(t)
-          }
-
-          def future = promise.flatMap(_ => Future(value.incrementAndGet()))
+          def infiniteFuture(ref: AtomicInteger): Future[Nothing] =
+            pool(ref.getAndIncrement()).flatMap(_ => infiniteFuture(ref))
 
           for {
-            fiber <- Task.fromTwitterFuture(future).fork
+            ref   <- UIO(new AtomicInteger(0))
+            fiber <- Task.fromTwitterFuture(infiniteFuture(ref)).fork
             _     <- fiber.interrupt
-            _     <- Task.attempt(promise.setDone())
-            a     <- fiber.await
-            v     <- Task.succeed(value.get)
-          } yield assert(a.toEither)(isLeft) && assert(v)(isZero)
-        }
+            v1    <- UIO(ref.get)
+            v2    <- UIO(ref.get)
+          } yield assert(v1)(equalTo(v2))
+        } @@ nonFlaky(100000)
       ),
       suite("Runtime.unsafeRunToTwitterFuture")(
-        test("return successful `Future` if Task evaluation succeeded.") {
-          assert(Await.result(runtime.unsafeRunToTwitterFuture(Task.succeed(2))))(equalTo(2))
-        },
-        test("return failed `Future` if Task evaluation failed.") {
-          val error = new Exception
-          val task  = Task.fail(error)
-
-          val result =
-            Try(Await.result(runtime.unsafeRunToTwitterFuture(task))) match {
-              case Failure(exception) => Some(exception)
-              case Success(_)         => None
-            }
-
-          assert(result)(isSome(equalTo(error)))
-        },
-        test("ensure Task evaluation is interrupted together with Future.") {
+        test("produces successful futures if Task evaluation succeeds") {
           for {
-            promise <- zio.Promise.make[Throwable, Unit]
-            ref     <- zio.Ref.make(false)
-            task     = promise.await *> ref.set(true)
-            future  <- Task.attempt(runtime.unsafeRunToTwitterFuture(task))
-            _       <- Task.attempt(future.raise(new Exception))
-            _       <- promise.succeed(())
-            value   <- ref.get
-            status  <- Task.attempt(Await.result(future)).either
-          } yield assert(value)(isFalse) && assert(status)(isLeft)
-        } @@ flaky
+            value  <- UIO(10)
+            result <- Task.attempt(unsafeAwait(UIO(value)))
+          } yield assert(result)(equalTo(value))
+        },
+        test("produces failed futures if Task evaluation failed") {
+          for {
+            error  <- UIO(new Exception)
+            result <- Task.attempt(unsafeAwait(Task.fail(error))).either
+          } yield assert(result)(isLeft(equalTo(error)))
+        },
+        test("ensures task is interrupted") {
+          for {
+            future <- Task.attempt(runtime.unsafeRunToTwitterFuture(UIO.never))
+            _      <- Task.attempt(future.raise(new Exception))
+            status <- Task.attempt(Await.result(future)).either
+          } yield assert(status)(isLeft)
+        } @@ nonFlaky(100000)
       )
-    )
+    ) @@ sequential
+
+  private def unsafeAwait[A](task: Task[A]): A =
+    Await.result(runtime.unsafeRunToTwitterFuture(task))
 }

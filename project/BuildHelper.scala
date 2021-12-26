@@ -29,17 +29,17 @@ object BuildHelper {
 
   def buildInfoSettings(packageName: String) =
     List(
-      buildInfoKeys := List[BuildInfoKey](name, version, scalaVersion, sbtVersion, isSnapshot),
+      buildInfoKeys    := List[BuildInfoKey](name, version, scalaVersion, sbtVersion, isSnapshot),
       buildInfoPackage := packageName,
-      buildInfoObject := "BuildInfo"
+      buildInfoObject  := "BuildInfo"
     )
 
   def stdSettings(prjName: String) =
     Seq(
-      name := s"$prjName",
-      crossScalaVersions := List(Scala211, Scala212, Scala213),
+      name                     := s"$prjName",
+      crossScalaVersions       := List(Scala211, Scala212, Scala213),
       ThisBuild / scalaVersion := Scala213,
-      scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
+      scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
       Test / parallelExecution := true,
       incOptions ~= (_.withLogRecompileOnMacro(false))
     )
