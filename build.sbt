@@ -1,11 +1,13 @@
 import BuildHelper._
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 inThisBuild(
   List(
     organization := "dev.zio",
-    homepage := Some(url("https://zio.dev")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers := List(
+    homepage     := Some(url("https://zio.dev")),
+    licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers   := List(
       Developer(
         "jdegoes",
         "John De Goes",
@@ -18,12 +20,6 @@ inThisBuild(
         "dmijic@acm.org",
         url("http://github.com/mijicd")
       )
-    ),
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc"),
-    scmInfo := Some(
-      ScmInfo(url("https://github.com/zio/interop-twitter/"), "scm:git:git@github.com:zio/interop-twitter.git")
     )
   )
 )
@@ -35,13 +31,13 @@ lazy val twitter = project
   .in(file("."))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-twitter"))
-  .settings(buildInfoSettings)
+  .settings(buildInfoSettings("zio.interop.twitter"))
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"     %% "zio"          % "1.0.5",
+      "dev.zio"     %% "zio"          % Zio,
       "com.twitter" %% "util-core"    % "21.2.0",
-      "dev.zio"     %% "zio-test"     % "1.0.5" % Test,
-      "dev.zio"     %% "zio-test-sbt" % "1.0.5" % Test
+      "dev.zio"     %% "zio-test"     % Zio % Test,
+      "dev.zio"     %% "zio-test-sbt" % Zio % Test
     )
   )
