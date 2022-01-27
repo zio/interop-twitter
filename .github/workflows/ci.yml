@@ -73,7 +73,7 @@ jobs:
         uses: coursier/cache-action@v6
       - name: Release artifacts
         run: |
-          echo $PGP_SECRET | base64 --decode | gpg --batch --import
+          .github/decodekey.sh          
           ./sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
