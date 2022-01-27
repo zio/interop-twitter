@@ -72,8 +72,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts
-        run: |
-          .github/decodekey.sh          
+        run:
           ./sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
