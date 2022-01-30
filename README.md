@@ -1,4 +1,4 @@
-# Interop Twitter
+# Twitter Interop
 
 [![Project stage][Stage]][Stage-Page]
 ![CI][Badge-CI]
