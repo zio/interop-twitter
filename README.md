@@ -13,15 +13,15 @@ This library provides capability to convert Twitter `Future` into ZIO `Task`.
 import com.twitter.util.Future
 import zio.Console._
 import zio.interop.twitter._
-import zio.{ Console, Exit, Has, Task, URIO, ZIOAppDefault }
+import zio.{ Console, Exit, ZIO, URIO, ZIOAppDefault }
 
 object Example extends ZIOAppDefault {
-  def run: URIO[Has[Console], Exit[Throwable, Unit]] = {
+  def run: URIO[Console, Exit[Throwable, Unit]] = {
     val program =
       for {
         _        <- printLine("Hello! What is your name?")
         name     <- readLine
-        greeting <- Task.fromTwitterFuture(greet(name))
+        greeting <- ZIO.fromTwitterFuture(greet(name))
         _        <- printLine(greeting)
       } yield ()
 

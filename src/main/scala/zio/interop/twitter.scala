@@ -17,24 +17,24 @@
 package zio.interop
 
 import com.twitter.util.{ Future, FutureCancelledException, Promise, Return, Throw }
-import zio.{ RIO, Runtime, Task, UIO }
+import zio.{ RIO, Runtime, Task, UIO, Unsafe, ZIO }
 
 package object twitter {
-  implicit class TaskObjOps(private val obj: Task.type) extends AnyVal {
+  implicit class TaskObjOps(private val obj: ZIO.type) extends AnyVal {
     final def fromTwitterFuture[A](future: => Future[A]): Task[A] =
-      Task.uninterruptibleMask { restore =>
-        Task.attempt(future).flatMap { future =>
-          restore(Task.async { (cb: Task[A] => Unit) =>
+      ZIO.uninterruptibleMask { restore =>
+        ZIO.attempt(future).flatMap { future =>
+          restore(ZIO.async { (cb: Task[A] => Unit) =>
             future.respond {
-              case Return(a) => cb(Task.succeedNow(a))
-              case Throw(e)  => cb(Task.fail(e))
+              case Return(a) => cb(ZIO.succeedNow(a))
+              case Throw(e)  => cb(ZIO.fail(e))
             }
           }).onInterrupt {
-            UIO(future.raise(new FutureCancelledException)) *>
-              UIO.async { (cb: UIO[Unit] => Unit) =>
+            ZIO.succeed(future.raise(new FutureCancelledException)) *>
+              ZIO.async { (cb: UIO[Unit] => Unit) =>
                 future.respond {
-                  case Return(_) => cb(Task.unit)
-                  case Throw(_)  => cb(Task.unit)
+                  case Return(_) => cb(ZIO.unit)
+                  case Throw(_)  => cb(ZIO.unit)
                 }
               }
           }
@@ -42,18 +42,21 @@ package object twitter {
       }
   }
 
-  implicit class RuntimeOps[R](private val runtime: Runtime[R]) extends AnyVal {
-    def unsafeRunToTwitterFuture[A](rio: RIO[R, A]): Future[A] = {
+  implicit class RuntimeOps[R](private val unsafeAPI: Runtime[R]#UnsafeAPI) extends AnyVal {
+    def runToTwitterFuture[A](rio: RIO[R, A])(implicit unsafe: Unsafe): Future[A] = {
       lazy val promise = Promise[A]()
 
       val interruptible =
         for {
           f <- rio.fork
-          _ <- Task.attempt(promise.setInterruptHandler { case _ => runtime.unsafeRunAsync(f.interrupt) })
+          _ <- ZIO.attempt(promise.setInterruptHandler { case _ =>
+                 unsafeAPI.fork(f.interrupt)
+                 ()
+               })
           r <- f.join
         } yield r
 
-      runtime.unsafeRunAsyncWith(interruptible)(_.fold(c => promise.setException(c.squash), promise.setValue))
+      unsafeAPI.fork(interruptible.foldCause(c => promise.setException(c.squash), promise.setValue))
 
       promise
     }
