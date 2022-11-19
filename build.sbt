@@ -41,3 +41,17 @@ lazy val twitter = project
       "dev.zio"     %% "zio-test-sbt" % Zio % Test
     )
   )
+  
+lazy val docs = project
+  .in(file("zio-interop-twitter"))
+  .settings(
+    publish / skip := true,
+    moduleName := "zio-interop-twitter",
+    scalacOptions -= "-Yno-imports",
+    scalacOptions -= "-Xfatal-warnings",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio" % Zio
+    )
+  )
+  .dependsOn(twitter)
+  .enablePlugins(WebsitePlugin)
