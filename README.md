@@ -7,31 +7,7 @@
 
 This library provides capability to convert Twitter `Future` into ZIO `Task`.
 
-### Example
-
-```scala
-import com.twitter.util.Future
-import zio.Console._
-import zio.interop.twitter._
-import zio.{ Console, Exit, Has, Task, URIO, ZIOAppDefault }
-
-object Example extends ZIOAppDefault {
-  def run: URIO[Has[Console], Exit[Throwable, Unit]] = {
-    val program =
-      for {
-        _        <- printLine("Hello! What is your name?")
-        name     <- readLine
-        greeting <- Task.fromTwitterFuture(greet(name))
-        _        <- printLine(greeting)
-      } yield ()
-
-    program.exit
-  }
-
-  private def greet(name: String): Future[String] = Future.value(s"Hello, $name!")
-
-}
-```
+- [ZIO Interop Twitter Homepage](https://zio.dev/zio-interop-twitter/)
 
 [Badge-CI]: https://github.com/zio/interop-twitter/workflows/CI/badge.svg
 [Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-interop-twitter_2.12.svg "Sonatype Releases"
