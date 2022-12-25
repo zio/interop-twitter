@@ -1,6 +1,12 @@
 const sidebars = {
   sidebar: [
-    "index"
+    {
+      type: "category",
+      label: "ZIO Interop Twitter",
+      collapsed: false,
+      link: { type: "doc", id: "index" },
+      items: [ ]
+    }
   ]
 };
 

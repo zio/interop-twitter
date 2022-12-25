@@ -6,7 +6,9 @@ sidebar_label: "ZIO Interop Twitter"
 
 This library provides capability to convert Twitter `Future` into ZIO `Task`.
 
-### Example
+@PROJECT_BADGES@
+
+## Example
 
 ```scala
 import com.twitter.util.Future
