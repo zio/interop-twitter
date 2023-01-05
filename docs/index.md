@@ -6,7 +6,17 @@ sidebar_label: "ZIO Interop Twitter"
 
 This library provides capability to convert Twitter `Future` into ZIO `Task`.
 
-### Example
+@PROJECT_BADGES@
+
+## Installation
+
+In order to use this library, we need to add the following line in our `build.sbt` file:
+
+```scala
+libraryDependencies += "dev.zio" %% "zio-interop-twitter" % "@VERSION@"
+```
+
+## Example
 
 ```scala
 import com.twitter.util.Future

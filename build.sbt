@@ -45,13 +45,21 @@ lazy val twitter = project
 lazy val docs = project
   .in(file("zio-interop-twitter"))
   .settings(
-    publish / skip := true,
-    moduleName     := "zio-interop-twitter",
+    publish / skip    := true,
+    moduleName        := "zio-interop-twitter",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio" % Zio
-    )
+    ),
+    projectName       := "ZIO Interop Twitter",
+    badgeInfo         := Some(
+      BadgeInfo(
+        artifact = "zio-interop-twitter_2.12",
+        projectStage = ProjectStage.ProductionReady
+      )
+    ),
+    docsPublishBranch := "series/2.x"
   )
   .dependsOn(twitter)
   .enablePlugins(WebsitePlugin)
