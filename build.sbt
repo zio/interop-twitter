@@ -27,8 +27,11 @@ inThisBuild(
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
+lazy val root =
+  project.in(file(".")).settings(publish / skip := true).aggregate(twitter, docs)
+
 lazy val twitter = project
-  .in(file("."))
+  .in(file("zio-interop-twitter"))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-twitter"))
   .settings(buildInfoSettings("zio.interop.twitter"))
@@ -43,23 +46,17 @@ lazy val twitter = project
   )
 
 lazy val docs = project
-  .in(file("zio-interop-twitter"))
+  .in(file("zio-interop-twitter-docs"))
   .settings(
-    publish / skip    := true,
-    moduleName        := "zio-interop-twitter",
+    moduleName                                 := "zio-interop-twitter",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % Zio
-    ),
-    projectName       := "ZIO Interop Twitter",
-    badgeInfo         := Some(
-      BadgeInfo(
-        artifact = "zio-interop-twitter_2.12",
-        projectStage = ProjectStage.ProductionReady
-      )
-    ),
-    docsPublishBranch := "series/2.x"
+    libraryDependencies ++= Seq("dev.zio" %% "zio" % Zio),
+    projectName                                := "ZIO Interop Twitter",
+    mainModuleName                             := (twitter / moduleName).value,
+    projectStage                               := ProjectStage.ProductionReady,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(twitter),
+    docsPublishBranch                          := "series/2.x"
   )
   .dependsOn(twitter)
   .enablePlugins(WebsitePlugin)
