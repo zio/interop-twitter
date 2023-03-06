@@ -21,7 +21,7 @@ object TwitterSpec extends ZIOSpecDefault {
   val customExecutorLayer: ZLayer[Any, Nothing, Any] =
     Runtime.setExecutor(customExecutor) to Runtime.setBlockingExecutor(customExecutor)
 
-  override val bootstrap: ZLayer[Scope, Any, TestEnvironment] =
+  override val bootstrap: ZLayer[Any, Any, TestEnvironment] =
     testEnvironment andTo customExecutorLayer
 
   def spec =

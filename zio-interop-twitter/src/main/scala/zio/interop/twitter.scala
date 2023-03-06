@@ -25,14 +25,14 @@ package object twitter {
       ZIO.uninterruptibleMask { restore =>
         ZIO.attempt(future).flatMap { future =>
           restore(ZIO.async { (cb: Task[A] => Unit) =>
-            future.respond {
-              case Return(a) => cb(ZIO.succeedNow(a))
+            val _ = future.respond {
+              case Return(a) => cb(ZIO.succeed(a))
               case Throw(e)  => cb(ZIO.fail(e))
             }
           }).onInterrupt {
             ZIO.succeed(future.raise(new FutureCancelledException)) *>
               ZIO.async { (cb: UIO[Unit] => Unit) =>
-                future.respond {
+                val _ = future.respond {
                   case Return(_) => cb(ZIO.unit)
                   case Throw(_)  => cb(ZIO.unit)
                 }
