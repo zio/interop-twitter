@@ -21,11 +21,10 @@ object BuildHelper {
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
 
-  val Scala211: String = versions("2.11")
   val Scala212: String = versions("2.12")
   val Scala213: String = versions("2.13")
 
-  val Zio: String = "2.0.9"
+  val Zio: String = "2.0.15"
 
   def buildInfoSettings(packageName: String) =
     List(
@@ -37,7 +36,7 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name                     := s"$prjName",
-      crossScalaVersions       := List(Scala211, Scala212, Scala213),
+      crossScalaVersions       := List(Scala212, Scala213),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
       Test / parallelExecution := true,
