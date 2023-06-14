@@ -23,6 +23,7 @@ object BuildHelper {
 
   val Scala212: String = versions("2.12")
   val Scala213: String = versions("2.13")
+  val Scala3: String = versions("3.3")
 
   val Zio: String = "2.0.15"
 
@@ -36,7 +37,7 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name                     := s"$prjName",
-      crossScalaVersions       := List(Scala212, Scala213),
+      crossScalaVersions       := List(Scala212, Scala213, Scala3),
       ThisBuild / scalaVersion := Scala213,
       scalacOptions            := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
       Test / parallelExecution := true,
